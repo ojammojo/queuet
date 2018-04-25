@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import logo from './logo.svg';
+//import logo from './logo.svg';
 import './App.css';
 
 let greyText = 'grey'
@@ -19,7 +19,7 @@ class Block extends Component {
 class Filter extends Component {
   render() {
     return (
-      <div style = {{}}>
+      <div>
         <input type="text"/> Search for a song
       </div>
     );
