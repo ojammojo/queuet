@@ -1,55 +1,47 @@
 import React, { Component } from 'react';
 //import logo from './logo.svg';
 import './App.css';
+import queryString from 'query-string'
 
 let greyText = 'grey'
 let greyTextColor = {color: greyText}
 let defaultStyle = {background: 'pink'}
 
-let fakeServerData = {
-  user: {
-    name: 'Owen',
-    playlists: [
-      {
-        name: 'top',
-        songs: [{name: 'song uno', duration: 120},
-                {name: 'song two', duration: 220},
-                {name: 'songo three0', duration: 300}
-               ]
-      },
-      {
-        name: 'second to top',
-        songs: [{name: 'song uno', duration: 120},
-                {name: 'song two', duration: 220},
-                {name: 'songo three0', duration: 300}
-               ]
-      },
-      {
-        name: 'last playlist',
-        songs: [{name: 'song uno', duration: 120},
-                {name: 'song two', duration: 220},
-                {name: 'songo three0', duration: 300}
-               ]
-      }
-    ]
-  }
-}
+// let fakeServerData = {
+//   user: {
+//     name: 'Owen',
+//     playlists: [
+//       {
+//         name: 'top',
+//         songs: [{name: 'song 1', duration: 120},
+//                 {name: 'song two', duration: 220},
+//                 {name: 'songo 3', duration: 300}
+//                ]
+//       },
+//       {
+//         name: 'second to top',
+//         songs: [{name: 'song uno', duration: 120},
+//                 {name: 'song two', duration: 220},
+//                 {name: 'songo three0', duration: 300}
+//                ]
+//       },
+//       {
+//         name: 'last playlist',
+//         songs: [{name: 'song uno', duration: 120},
+//                 {name: 'song two', duration: 220},
+//                 {name: 'songo thr33', duration: 300}
+//                ]
+//       }
+//     ]
+//   }
+// }
 
 class Block extends Component {
   render() {
+    let imgSrc = this.props.imgSrcData
     return (
       <div style = {greyTextColor} className="block">
-        <h3> A playlist sharing App </h3>
-      </div>
-    );
-  }
-}
-
-class Filter extends Component {
-  render() {
-    return (
-      <div>
-        <input type="text"/> Search for a song
+        <img src={imgSrc} width='100px' height='100px' style={{'border-radius': '50%'}}/>
       </div>
     );
   }
@@ -60,12 +52,13 @@ class SongLengths extends Component {
     let allSongs = this.props.playlists.reduce((songs, eachPlaylist) => {
       return songs.concat(eachPlaylist.songs)
     }, [])
-    let totalDurtaion = this.props.playlists.reduce((sum, eachSong) => {
-      return sum + eachSong.duration
-    }, 0)
+    console.log(allSongs)
+    let totalDuration = allSongs.reduce((sum, eachSong) => {
+      return sum + " " +eachSong.name
+    }, '')
     return (
       <div>
-        <p> total song length: {allSongs.length/60}</p>
+        <p> total song length: {totalDuration}</p>
       </div>
     );
   }
@@ -76,7 +69,7 @@ class SongList extends Component {
     return (
       <div style = {{...defaultStyle, width: '100px', height: '150px'}}>
         <h4>
-          Songs {this.props.playlists.length}:
+          Songs:
         </h4>
         <ul> <li>Song 1</li> <li>Song 2</li> <li>Song 3</li></ul>
       </div>
@@ -90,27 +83,44 @@ class App extends Component {
     this.state = {serverData: {}}
   }
   componentDidMount() {
-    setTimeout(() => {
-      this.setState({serverData: fakeServerData});
-    }, 1000)
+    let parsed = queryString.parse(window.location.search);
+    let accessToken = parsed.access_token
 
-    //this.setState({serverData: fakeServerData});
+    if (!accessToken) {
+      return
+    }
+
+    fetch('https://api.spotify.com/v1/me', {
+      headers: {'Authorization': 'Bearer ' + accessToken}
+    }).then(response => response.json())
+    .then(data => {
+      this.setState({serverData: {user: {name: data.display_name, img: data.images[0].url}}})
+      console.log(data)
+    })
+
   }
   render() {
-    let black = '#fff'
-    let headerStyle = {color: black, 'font-size': '50px'}
+
     return (
       <div className="App">
         {this.state.serverData.user ?
-          <div>
+           <div>
             <h1>
-              Queuet for {this.state.serverData.user.name}
+              Queuet, Hello {this.state.serverData.user.name}
             </h1>
-            <Block/>
-            <Filter/>
-            <SongList playlists={this.state.serverData.user.playlists}/>
-            <SongLengths playlists={this.state.serverData.user.playlists}/>
-          </div> : 'loading your (re)queuets...'
+            <Block imgSrcData={this.state.serverData.user.img}/>
+            {this.state.serverData.playlists &&
+              <div>
+                {this.state.serverData.user.playlists.map(playlist =>
+                  <SongList />
+                 )}
+                <SongLengths playlists={this.state.serverData.user.playlists}/>
+              </div>
+            }
+
+          </div> : <button onClick={() => {
+                      window.location='http://localhost:8888/login'
+                    }}> sign into Spotify </button>
         }
       </div>
     );
