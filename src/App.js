@@ -8,7 +8,7 @@ let greyText = 'grey'
 let greyTextColor = {color: greyText}
 let defaultStyle = {background: 'pink'}
 
-
+//renders users profile picture within the L.H.S menu
 class Block extends Component {
   render() {
     let imgSrc = this.props.imgSrcData
@@ -90,6 +90,62 @@ class ImgDisplay extends Component {
   }
 }
 
+let trackStyle = {
+  color: 'black'
+}
+
+//renders a list of songs returned from the search
+class TrackSearchReturn extends Component {
+  constructor(props) {
+    super(props)
+    this.state = {
+      hovered: false
+    }
+
+    /* binds these functions locally so that 'this' is not from the global mouse object,
+       but instead refering to TrackSearchReturn object */
+    this.mouseOver = this.mouseOver.bind(this);
+    this.mouseOut = this.mouseOut.bind(this);
+    this.pushTrack = this.pushTrack.bind(this);
+
+  }
+
+  hoverStyle() {
+    if (this.state.hovered) {
+      /* mouse ENTER state */
+      return {...trackStyle, background: 'grey'}
+    } else {
+      /* mouse EXIT state */
+      return {...trackStyle, background: ''}
+    }
+  }
+
+  //function will push the selected song to the users DB
+  pushTrack() {
+    console.log('pushing a song to the local DB')
+  }
+
+  mouseOver() {
+    console.log('mouse has entered the div')
+    this.setState({hovered: true})
+  }
+
+  mouseOut() {
+    this.setState({hovered: false})
+  }
+
+  render () {
+    return (
+      <div style={this.hoverStyle()} onMouseOver={this.mouseOver} onMouseOut={this.mouseOut} onClick={this.pushTrack}>
+        <div>
+
+        </div>
+        <p> {this.props.trackName}   {this.props.trackLength} </p>
+      </div>
+    )
+  }
+}
+
 //form styling
 let seachFormStyle = {
   backgroundColor: 'transparent',
@@ -102,7 +158,7 @@ let seachFormStyle = {
   outline: 0
 }
 
-let itemReturnStyle = {width: '80px', height: '80px', 'borderRadius': '50%', zIndex: '100'}
+let itemReturnStyle = {width: '40px', height: '40px', 'borderRadius': '50%', zIndex: '100'}
 
 //returns a list of artists relevant to the search
 class ItemReturn extends Component {
@@ -123,7 +179,8 @@ class NameForm extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      searchReturn: {}
+      searchReturn: {},
+      trackSearchReturn: {}
     };
 
     this.handleChange = this.handleChange.bind(this);
@@ -136,7 +193,7 @@ class NameForm extends React.Component {
 
   handleSubmit(event) {
 
-    console.log('querying a song')
+    console.log('querying a song/artist')
     let parsed = queryString.parse(window.location.search);
     let accessToken = parsed.access_token
 
@@ -145,12 +202,22 @@ class NameForm extends React.Component {
       return
     }
 
+    //fetching the results of the user searched 'ARTISTS'
     fetch(`https://api.spotify.com/v1/search?q=${this.state.value}%20&type=artist`, {
       headers: {'Authorization': 'Bearer ' + accessToken}
     }).then(response => response.json())
     .then(data => {
       this.setState({searchReturn: data.artists.items})
       console.log(data)
+    })
+
+    //fetching the results of the user searched 'SONGS'
+    fetch(`https://api.spotify.com/v1/search?q=${this.state.value}%20&type=track`, {
+      headers: {'Authorization': 'Bearer ' + accessToken}
+    }).then(response => response.json())
+    .then(dataTrack => {
+      this.setState({trackSearchReturn: dataTrack.tracks.items})
+      console.log(dataTrack)
     })
 
     //alert('A name was submitted: ' + this.state.value);
@@ -165,25 +232,29 @@ class NameForm extends React.Component {
           <input style={seachFormStyle} type="text" placeholder="search..." value={this.state.value} onChange={this.handleChange} />
         </form>
         <div>
-          { this.state.searchReturn[0] &&
+          { (this.state.searchReturn[0] && this.state.trackSearchReturn[0]) &&
             <div>
+            <h3 style={{background: 'orange'}}> Artists </h3>
             {
+              /* rendering the artists from the search query */
               this.state.searchReturn.map(artist => {
                 let imgResult = artist.images[0]
                 /*console.log(res)*/
                 if (imgResult && artist.name) {
-                  return(
-                    <ItemReturn imgSrcURL={imgResult.url} artistTitle={artist.name}/>
-                  )
+                  return(<ItemReturn imgSrcURL={imgResult.url} artistTitle={artist.name}/>)
                 } else {
-                  return (
-                    <ItemReturn imgSrcURL={null} artistTitle={artist.name}/>
-                  )
+                  return (<ItemReturn imgSrcURL={null} artistTitle={artist.name}/>)
                 }
-
-              }
-              )}
-
+              })
+            }
+            <h3 style={{background: 'orange'}}> Tracks </h3>
+            {
+              /* rendering the songs from the search query */
+              this.state.trackSearchReturn.map(songs => {
+                let length = Math.floor(songs.duration_ms/1000/60)
+                return(<TrackSearchReturn trackName={songs.name} trackLength={length}/>)
+              })
+            }
             </div>
           }
         </div>
