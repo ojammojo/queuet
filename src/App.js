@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
 //import logo from './logo.svg';
 import './App.css';
-import queryString from 'query-string'
-
+import queryString from 'query-string';
+//import { app } from './base.js';
+import * as firebase from 'firebase'
 
 let greyText = 'grey'
 let greyTextColor = {color: greyText}
@@ -18,6 +19,54 @@ class Block extends Component {
       </div>
     );
   }
+}
+
+let counterTest = 0;
+
+class DBtest extends Component {
+
+  constructor() {
+    super();
+    this.state = {
+      speed: 10
+    }
+
+    this.testDB = this.testDB.bind(this);
+  }
+
+  componentDidMount() {
+    const rootRef = firebase.database().ref();
+    const speedRef = rootRef.child('speed');
+
+    //connects to firebase and sets the state of 'speed' to the
+    //value of speed in the firbase database
+    speedRef.on('value', snap => {
+      this.setState({
+        speed: snap.val()
+      })
+    });
+  }
+
+  testDB() {
+    counterTest = counterTest + 1;
+    console.log(counterTest)
+
+    const firebaseData = firebase.database().ref();
+    //const speedRef = rootRef.child('speed');
+    let obj = {speed: counterTest}
+
+    firebaseData.set(obj)
+  }
+
+  render() {
+    return(
+      <div>
+        <h1> {this.state.speed} </h1>
+        <button onClick={this.testDB}> test db </button>
+      </div>
+    );
+  }
+
 }
 
 class SongLengths extends Component {
@@ -89,6 +138,8 @@ class ImgDisplay extends Component {
     )
   }
 }
+
+let count = 0
 
 let trackStyle = {
   color: 'black'
@@ -231,6 +282,7 @@ class NameForm extends React.Component {
         <form onSubmit={this.handleSubmit}>
           <input style={seachFormStyle} type="text" placeholder="search..." value={this.state.value} onChange={this.handleChange} />
         </form>
+        <DBtest />
         <div>
           { (this.state.searchReturn[0] && this.state.trackSearchReturn[0]) &&
             <div>
